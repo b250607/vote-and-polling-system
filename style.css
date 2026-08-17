@@ -1,0 +1,443 @@
+/* =========================
+   RESET
+========================= */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+
+/* =========================
+   BODY
+========================= */
+
+body {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    padding: 25px;
+}
+
+
+/* =========================
+   COMMON
+========================= */
+
+.container {
+    max-width: 1100px;
+    margin: auto;
+}
+
+.hidden {
+    display: none !important;
+}
+
+
+/* =========================
+   LOGIN
+========================= */
+
+.login-box {
+    width: 400px;
+    max-width: 100%;
+    margin: 70px auto;
+    background: white;
+    padding: 35px;
+    border-radius: 20px;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
+}
+
+.login-box h1 {
+    text-align: center;
+    color: #4f46e5;
+    margin-bottom: 10px;
+}
+
+.subtitle {
+    text-align: center;
+    color: #666;
+    margin-bottom: 30px;
+}
+
+.input-group {
+    margin-bottom: 20px;
+}
+
+.input-group label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 13px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 15px;
+}
+
+.input-group input:focus {
+    outline: none;
+    border-color: #4f46e5;
+}
+
+.login-btn {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 8px;
+    background: #4f46e5;
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.login-btn:hover {
+    background: #4338ca;
+}
+
+.error {
+    color: #dc2626;
+    text-align: center;
+    margin-top: 12px;
+}
+
+
+/* =========================
+   HEADER
+========================= */
+
+.header {
+    background: white;
+    padding: 25px;
+    border-radius: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.header h1 {
+    color: #4f46e5;
+    margin-bottom: 7px;
+}
+
+.header p {
+    color: #666;
+}
+
+.logout-btn {
+    border: none;
+    background: #dc2626;
+    color: white;
+    padding: 11px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.logout-btn:hover {
+    background: #b91c1c;
+}
+
+
+/* =========================
+   USER INFO
+========================= */
+
+.user-info {
+    background: white;
+    padding: 15px 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    color: #555;
+}
+
+
+/* =========================
+   POLL TITLE
+========================= */
+
+.poll-title {
+    background: white;
+    padding: 25px;
+    text-align: center;
+    border-radius: 15px;
+    margin-bottom: 20px;
+}
+
+.poll-title h2 {
+    color: #333;
+    margin-bottom: 8px;
+}
+
+.poll-title p {
+    color: #666;
+}
+
+
+/* =========================
+   CANDIDATES
+========================= */
+
+.candidates {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+}
+
+.candidate {
+    background: white;
+    padding: 25px 15px;
+    text-align: center;
+    border-radius: 15px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+    transition: 0.3s;
+}
+
+.candidate:hover {
+    transform: translateY(-5px);
+}
+
+.scooter-icon {
+    font-size: 55px;
+    margin-bottom: 15px;
+}
+
+.candidate h3 {
+    color: #333;
+    margin-bottom: 8px;
+    font-size: 20px;
+}
+
+.candidate p {
+    color: #777;
+    font-size: 14px;
+    margin-bottom: 18px;
+}
+
+.candidate input {
+    display: none;
+}
+
+.select-btn {
+    display: inline-block;
+    padding: 10px 13px;
+    border: 2px solid #4f46e5;
+    border-radius: 8px;
+    color: #4f46e5;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.candidate input:checked + .select-btn {
+    background: #4f46e5;
+    color: white;
+}
+
+
+/* =========================
+   SUBMIT BUTTON
+========================= */
+
+.submit-vote {
+    display: block;
+    margin: 30px auto;
+    padding: 15px 45px;
+    border: none;
+    border-radius: 9px;
+    background: #16a34a;
+    color: white;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.submit-vote:hover {
+    background: #15803d;
+}
+
+
+/* =========================
+   RESULTS
+========================= */
+
+.results {
+    background: white;
+    padding: 25px;
+    border-radius: 15px;
+    margin-bottom: 30px;
+}
+
+.results h2 {
+    text-align: center;
+    margin-bottom: 25px;
+    color: #333;
+}
+
+.result-row {
+    display: grid;
+    grid-template-columns: 140px 1fr 40px;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.result-name {
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.bar {
+    height: 22px;
+    background: #e5e7eb;
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+.bar-fill {
+    height: 100%;
+    width: 0%;
+    background: #4f46e5;
+    transition: width 0.5s ease;
+}
+
+.vote-number {
+    font-weight: bold;
+    text-align: center;
+}
+
+
+/* =========================
+   POPUP
+========================= */
+
+.popup-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.popup {
+    width: 400px;
+    max-width: 90%;
+    background: white;
+    padding: 35px;
+    border-radius: 20px;
+    text-align: center;
+    animation: popupAnimation 0.3s ease;
+}
+
+.success-icon {
+    width: 70px;
+    height: 70px;
+    margin: 0 auto 20px;
+    background: #16a34a;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 40px;
+}
+
+.popup h2 {
+    color: #16a34a;
+    margin-bottom: 12px;
+}
+
+.popup p {
+    color: #555;
+}
+
+.popup-small {
+    font-size: 14px;
+    margin-top: 8px;
+}
+
+.popup-btn {
+    margin-top: 25px;
+    padding: 11px 30px;
+    background: #4f46e5;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.popup-btn:hover {
+    background: #4338ca;
+}
+
+
+/* =========================
+   POPUP ANIMATION
+========================= */
+
+@keyframes popupAnimation {
+
+    from {
+        transform: scale(0.7);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+}
+
+
+/* =========================
+   TABLET
+========================= */
+
+@media (max-width: 900px) {
+
+    .candidates {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+}
+
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 600px) {
+
+    body {
+        padding: 12px;
+    }
+
+    .candidates {
+        grid-template-columns: 1fr;
+    }
+
+    .header {
+        flex-direction: column;
+        text-align: center;
+        gap: 15px;
+    }
+
+    .result-row {
+        grid-template-columns: 110px 1fr 30px;
+    }
+
+    .login-box {
+        margin: 40px auto;
+    }
+
+}

@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Best EV Scooter Poll 2026</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- LOGIN PAGE -->
+    <div class="container" id="loginPage">
+
+        <div class="login-box">
+
+            <h1>🗳️ EV Scooter Poll</h1>
+
+            <p class="subtitle">
+                Login to cast your vote
+            </p>
+
+            <form id="loginForm">
+
+                <div class="input-group">
+
+                    <label for="username">
+                        Username
+                    </label>
+
+                    <input
+                        type="text"
+                        id="username"
+                        placeholder="Enter username"
+                        required
+                    >
+
+                </div>
+
+
+                <div class="input-group">
+
+                    <label for="password">
+                        Password
+                    </label>
+
+                    <input
+                        type="password"
+                        id="password"
+                        placeholder="Enter password"
+                        required
+                    >
+
+                </div>
+
+
+                <button type="submit" class="login-btn">
+                    Login
+                </button>
+
+                <p id="loginError" class="error"></p>
+
+            </form>
+
+            <div class="demo-login">
+    <p><strong>Demo Login</strong></p>
+    <p>Username: student</p>
+    <p>Password: 12345</p>
+</div>
+
+        </div>
+
+    </div>
+
+
+    <!-- VOTING PAGE -->
+    <div class="container hidden" id="votingPage">
+
+        <!-- HEADER -->
+        <div class="header">
+
+            <div>
+                <h1>🛵 Best EV Scooter Poll 2026</h1>
+
+                <p>
+                    Vote for the best electric scooter
+                </p>
+            </div>
+
+            <button
+                class="logout-btn"
+                onclick="logout()"
+            >
+                Logout
+            </button>
+
+        </div>
+
+
+        <!-- USER INFO -->
+        <div class="user-info">
+
+            Logged in as:
+            <strong id="loggedUser"></strong>
+
+        </div>
+
+
+        <!-- POLL QUESTION -->
+        <div class="poll-title">
+
+            <h2>
+                Which is the Best EV Scooter?
+            </h2>
+
+            <p>
+                Select one scooter and submit your vote.
+            </p>
+
+        </div>
+
+
+        <!-- SCOOTER OPTIONS -->
+        <div class="candidates">
+
+
+            <!-- BAJAJ CHETAK -->
+            <div class="candidate">
+
+                <div class="scooter-icon">
+                    🛵
+                </div>
+
+                <h3>
+                    Bajaj Chetak
+                </h3>
+
+                <p>
+                    Premium Electric Scooter
+                </p>
+
+                <input
+                    type="radio"
+                    name="candidate"
+                    value="Bajaj Chetak"
+                    id="chetak"
+                >
+
+                <label
+                    for="chetak"
+                    class="select-btn"
+                >
+                    Vote for Chetak
+                </label>
+
+            </div>
+
+
+            <!-- TVS IQUBE -->
+            <div class="candidate">
+
+                <div class="scooter-icon">
+                    🛵
+                </div>
+
+                <h3>
+                    TVS iQube
+                </h3>
+
+                <p>
+                    Smart Electric Scooter
+                </p>
+
+                <input
+                    type="radio"
+                    name="candidate"
+                    value="TVS iQube"
+                    id="iqube"
+                >
+
+                <label
+                    for="iqube"
+                    class="select-btn"
+                >
+                    Vote for iQube
+                </label>
+
+            </div>
+
+
+            <!-- ATHER -->
+            <div class="candidate">
+
+                <div class="scooter-icon">
+                    🛵
+                </div>
+
+                <h3>
+                    Ather
+                </h3>
+
+                <p>
+                    Performance Electric Scooter
+                </p>
+
+                <input
+                    type="radio"
+                    name="candidate"
+                    value="Ather"
+                    id="ather"
+                >
+
+                <label
+                    for="ather"
+                    class="select-btn"
+                >
+                    Vote for Ather
+                </label>
+
+            </div>
+
+
+            <!-- OLA -->
+            <div class="candidate">
+
+                <div class="scooter-icon">
+                    🛵
+                </div>
+
+                <h3>
+                    Ola Electric
+                </h3>
+
+                <p>
+                    Modern Electric Scooter
+                </p>
+
+                <input
+                    type="radio"
+                    name="candidate"
+                    value="Ola Electric"
+                    id="ola"
+                >
+
+                <label
+                    for="ola"
+                    class="select-btn"
+                >
+                    Vote for Ola
+                </label>
+
+            </div>
+
+        </div>
+
+
+        <!-- SUBMIT BUTTON -->
+        <button
+            class="submit-vote"
+            onclick="submitVote()"
+        >
+            🗳️ Submit Vote
+        </button>
+
+
+        <!-- RESULTS -->
+        <div class="results">
+
+            <h2>
+                📊 Live Poll Results
+            </h2>
+
+
+            <!-- CHETAK -->
+            <div class="result-row">
+
+                <span class="result-name">
+                    Bajaj Chetak
+                </span>
+
+                <div class="bar">
+
+                    <div
+                        class="bar-fill"
+                        id="chetakBar"
+                    ></div>
+
+                </div>
+
+                <span
+                    class="vote-number"
+                    id="chetakVotes"
+                >
+                    0
+                </span>
+
+            </div>
+
+
+            <!-- IQUBE -->
+            <div class="result-row">
+
+                <span class="result-name">
+                    TVS iQube
+                </span>
+
+                <div class="bar">
+
+                    <div
+                        class="bar-fill"
+                        id="iqubeBar"
+                    ></div>
+
+                </div>
+
+                <span
+                    class="vote-number"
+                    id="iqubeVotes"
+                >
+                    0
+                </span>
+
+            </div>
+
+
+            <!-- ATHER -->
+            <div class="result-row">
+
+                <span class="result-name">
+                    Ather
+                </span>
+
+                <div class="bar">
+
+                    <div
+                        class="bar-fill"
+                        id="atherBar"
+                    ></div>
+
+                </div>
+
+                <span
+                    class="vote-number"
+                    id="atherVotes"
+                >
+                    0
+                </span>
+
+            </div>
+
+
+            <!-- OLA -->
+            <div class="result-row">
+
+                <span class="result-name">
+                    Ola Electric
+                </span>
+
+                <div class="bar">
+
+                    <div
+                        class="bar-fill"
+                        id="olaBar"
+                    ></div>
+
+                </div>
+
+                <span
+                    class="vote-number"
+                    id="olaVotes"
+                >
+                    0
+                </span>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- SUCCESS POPUP -->
+    <div
+        class="popup-overlay hidden"
+        id="successPopup"
+    >
+
+        <div class="popup">
+
+            <div class="success-icon">
+                ✓
+            </div>
+
+            <h2>
+                Vote Submitted!
+            </h2>
+
+            <p>
+                Your vote has been successfully recorded.
+            </p>
+
+            <p class="popup-small">
+                Thank you for participating in the poll.
+            </p>
+
+            <button
+                class="popup-btn"
+                onclick="closePopup()"
+            >
+                OK
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <script src="script.js"></script>
+
+</body>
+</html>
