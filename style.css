@@ -441,3 +441,91 @@ body {
     }
 
 }
+/* =========================
+   AUTH + THEME ENHANCEMENTS
+========================= */
+:root {
+    color-scheme: light;
+    --page-bg: #eef2ff;
+    --surface: #ffffff;
+    --text: #1f2937;
+    --muted: #667085;
+    --border: #d1d5db;
+    --field-bg: #ffffff;
+    --bar-bg: #e5e7eb;
+}
+:root[data-theme="dark"] {
+    color-scheme: dark;
+    --page-bg: #0b1120;
+    --surface: #151e30;
+    --text: #e5e7eb;
+    --muted: #a7b0c0;
+    --border: #374151;
+    --field-bg: #0f172a;
+    --bar-bg: #303b4e;
+}
+body {
+    background: var(--page-bg);
+    color: var(--text);
+    transition: background .2s ease, color .2s ease;
+}
+.login-box, .header, .user-info, .poll-title, .candidate, .results, .popup {
+    background: var(--surface);
+    color: var(--text);
+}
+.login-box h1, .header h1 { color: #6366f1; }
+.subtitle, .header p, .poll-title p, .candidate p, .popup p { color: var(--muted); }
+.poll-title h2, .candidate h3, .results h2 { color: var(--text); }
+.input-group label, .result-name, .vote-number { color: var(--text); }
+.input-group input {
+    background: var(--field-bg);
+    color: var(--text);
+    border-color: var(--border);
+}
+.input-group input::placeholder { color: var(--muted); }
+.bar { background: var(--bar-bg); }
+.demo-login {
+    margin-top: 22px;
+    padding: 12px;
+    border-radius: 9px;
+    background: color-mix(in srgb, var(--surface) 88%, #6366f1 12%);
+    color: var(--muted);
+    text-align: center;
+    font-size: 14px;
+    line-height: 1.7;
+}
+.auth-switch {
+    margin-top: 18px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 14px;
+}
+.text-btn {
+    border: 0;
+    background: transparent;
+    color: #6366f1;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: inherit;
+    padding: 3px;
+}
+.text-btn:hover { text-decoration: underline; }
+.theme-toggle {
+    position: fixed;
+    top: 16px;
+    right: 18px;
+    z-index: 1100;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--text);
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(0,0,0,.12);
+}
+.error { min-height: 18px; }
+@media (max-width: 600px) {
+    .theme-toggle { position: static; display: block; margin: 0 0 12px auto; }
+    .login-box { margin: 15px auto 30px; }
+}

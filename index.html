@@ -9,6 +9,7 @@
 </head>
 
 <body>
+    <button type="button" class="theme-toggle" id="themeToggle" aria-label="Toggle dark and light mode">🌙 Dark mode</button>
 
     <!-- LOGIN PAGE -->
     <div class="container" id="loginPage">
@@ -61,6 +62,30 @@
 
                 <p id="loginError" class="error"></p>
 
+            </form>
+
+            <p class="auth-switch">Don't have an account? <button type="button" class="text-btn" id="showRegister">Register</button></p>
+
+            <form id="registerForm" class="hidden">
+                <div class="input-group">
+                    <label for="registerName">Full name</label>
+                    <input type="text" id="registerName" placeholder="Enter your name" required minlength="2" autocomplete="name">
+                </div>
+                <div class="input-group">
+                    <label for="registerUsername">Username</label>
+                    <input type="text" id="registerUsername" placeholder="Choose a username" required minlength="3" autocomplete="username">
+                </div>
+                <div class="input-group">
+                    <label for="registerPassword">Password</label>
+                    <input type="password" id="registerPassword" placeholder="At least 6 characters" required minlength="6" autocomplete="new-password">
+                </div>
+                <div class="input-group">
+                    <label for="confirmPassword">Confirm password</label>
+                    <input type="password" id="confirmPassword" placeholder="Re-enter password" required minlength="6" autocomplete="new-password">
+                </div>
+                <button type="submit" class="login-btn">Create account</button>
+                <p id="registerError" class="error" role="alert"></p>
+                <p class="auth-switch">Already registered? <button type="button" class="text-btn" id="showLogin">Login</button></p>
             </form>
 
             <div class="demo-login">
