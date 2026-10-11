@@ -1,155 +1,449 @@
-/* Vote and Polling System: frontend demo authentication.
-   Accounts and votes are stored in this browser's localStorage only.
-   Do not use this client-side demo for real or confidential elections. */
+/* ===============================
+   STATE & ELEMENTS
+================================ */
 
-const USERS_KEY = "pollUsers";
-const VOTES_KEY = "votes";
-const VOTED_USERS_KEY = "votedUsers";
 let currentUser = localStorage.getItem("currentUser");
 
-const loginPage = document.getElementById("loginPage");
-const votingPage = document.getElementById("votingPage");
-const loggedUser = document.getElementById("loggedUser");
-const loginForm = document.getElementById("loginForm");
-const registerForm = document.getElementById("registerForm");
+const registerPage = document.getElementById("registerPage");
+const loginPage    = document.getElementById("loginPage");
+const votingPage   = document.getElementById("votingPage");
+const loggedUser   = document.getElementById("loggedUser");
 
-function readUsers() {
-    try { return JSON.parse(localStorage.getItem(USERS_KEY)) || []; }
-    catch { return []; }
+
+/* ===============================
+   USER STORAGE
+================================ */
+
+function getUsers() {
+    try {
+        return JSON.parse(localStorage.getItem("users")) || {};
+    } catch (e) {
+        return {};
+    }
 }
 
-function showLoginForm() {
-    loginForm.classList.remove("hidden");
-    registerForm.classList.add("hidden");
-    document.getElementById("loginError").textContent = "";
+function saveUsers(users) {
+    localStorage.setItem("users", JSON.stringify(users));
+}
+
+/* Hash password (SHA-256) so it is not stored as plain text */
+async function hashPassword(password) {
+    if (window.crypto && window.crypto.subtle) {
+        const data = new TextEncoder().encode(password);
+        const buf = await crypto.subtle.digest("SHA-256", data);
+        return Array.from(new Uint8Array(buf))
+            .map(b => b.toString(16).padStart(2, "0"))
+            .join("");
+    }
+    /* Fallback if crypto.subtle is unavailable */
+    let hash = 5381;
+    for (let i = 0; i < password.length; i++) {
+        hash = ((hash << 5) + hash) + password.charCodeAt(i);
+        hash |= 0;
+    }
+    return "fb" + hash;
+}
+
+
+/* ===============================
+   PAGE SWITCHING
+================================ */
+
+function showRegisterPage() {
+    registerPage.classList.remove("hidden");
+    loginPage.classList.add("hidden");
+    votingPage.classList.add("hidden");
     document.getElementById("registerError").textContent = "";
 }
-function showRegisterForm() {
-    loginForm.classList.add("hidden");
-    registerForm.classList.remove("hidden");
+
+function showLoginPage(message) {
+    registerPage.classList.add("hidden");
+    loginPage.classList.remove("hidden");
+    votingPage.classList.add("hidden");
     document.getElementById("loginError").textContent = "";
-    document.getElementById("registerError").textContent = "";
+    document.getElementById("loginSuccess").textContent = message || "";
 }
-document.getElementById("showRegister").addEventListener("click", showRegisterForm);
-document.getElementById("showLogin").addEventListener("click", showLoginForm);
-
-loginForm.addEventListener("submit", function(event) {
-    event.preventDefault();
-    const username = document.getElementById("username").value.trim();
-    const password = document.getElementById("password").value;
-    const error = document.getElementById("loginError");
-
-    // Keep the original demo account available.
-    const demoMatch = username === "student" && password === "12345";
-    const user = readUsers().find(u =>
-        u.username.toLowerCase() === username.toLowerCase() && u.password === password
-    );
-    if (demoMatch || user) {
-        currentUser = demoMatch ? "student" : user.username;
-        localStorage.setItem("currentUser", currentUser);
-        error.textContent = "";
-        showVotingPage();
-    } else {
-        error.textContent = "Incorrect username or password. Please try again.";
-    }
-});
-
-registerForm.addEventListener("submit", function(event) {
-    event.preventDefault();
-    const name = document.getElementById("registerName").value.trim();
-    const username = document.getElementById("registerUsername").value.trim();
-    const password = document.getElementById("registerPassword").value;
-    const confirm = document.getElementById("confirmPassword").value;
-    const error = document.getElementById("registerError");
-
-    if (name.length < 2) { error.textContent = "Please enter your full name."; return; }
-    if (!/^[a-zA-Z0-9_.-]{3,20}$/.test(username)) {
-        error.textContent = "Username must be 3–20 characters (letters, numbers, _, . or -)."; return;
-    }
-    if (password.length < 6) { error.textContent = "Password must be at least 6 characters."; return; }
-    if (password !== confirm) { error.textContent = "Passwords do not match."; return; }
-
-    const users = readUsers();
-    if (username.toLowerCase() === "student" ||
-        users.some(u => u.username.toLowerCase() === username.toLowerCase())) {
-        error.textContent = "That username is already registered. Choose another."; return;
-    }
-    users.push({ name, username, password });
-    localStorage.setItem(USERS_KEY, JSON.stringify(users));
-    registerForm.reset();
-    document.getElementById("username").value = username;
-    showLoginForm();
-    document.getElementById("loginError").textContent = "Account created. Please log in.";
-});
 
 function showVotingPage() {
+    registerPage.classList.add("hidden");
     loginPage.classList.add("hidden");
     votingPage.classList.remove("hidden");
     loggedUser.textContent = currentUser;
     updateResults();
 }
-function logout() {
-    localStorage.removeItem("currentUser");
-    currentUser = null;
-    votingPage.classList.add("hidden");
-    loginPage.classList.remove("hidden");
-    loginForm.reset();
-    showLoginForm();
-}
-function getVotes() {
-    try {
-        return JSON.parse(localStorage.getItem(VOTES_KEY)) || {
-            "Bajaj Chetak": 0, "TVS iQube": 0, "Ather": 0, "Ola Electric": 0
-        };
-    } catch {
-        return { "Bajaj Chetak": 0, "TVS iQube": 0, "Ather": 0, "Ola Electric": 0 };
-    }
-}
-function submitVote() {
-    if (!currentUser) { alert("Please login before voting."); return; }
-    const votedUsers = JSON.parse(localStorage.getItem(VOTED_USERS_KEY)) || [];
-    if (votedUsers.includes(currentUser)) { alert("You have already voted!"); return; }
-    const selected = document.querySelector('input[name="candidate"]:checked');
-    if (!selected) { alert("Please select an EV scooter first."); return; }
-    const votes = getVotes();
-    votes[selected.value] = (votes[selected.value] || 0) + 1;
-    localStorage.setItem(VOTES_KEY, JSON.stringify(votes));
-    votedUsers.push(currentUser);
-    localStorage.setItem(VOTED_USERS_KEY, JSON.stringify(votedUsers));
-    updateResults();
-    document.getElementById("successPopup").classList.remove("hidden");
-}
-function closePopup() {
-    document.getElementById("successPopup").classList.add("hidden");
-}
-function updateResults() {
-    const votes = getVotes();
-    const candidates = [
-        ["Bajaj Chetak", "chetak"], ["TVS iQube", "iqube"],
-        ["Ather", "ather"], ["Ola Electric", "ola"]
-    ];
-    const total = candidates.reduce((sum, [name]) => sum + (Number(votes[name]) || 0), 0);
-    candidates.forEach(([name, id]) => {
-        const count = Number(votes[name]) || 0;
-        document.getElementById(id + "Votes").textContent = count;
-        document.getElementById(id + "Bar").style.width =
-            (total ? (count / total) * 100 : 0) + "%";
-    });
-}
 
-/* Theme preference */
-function applyTheme(theme) {
-    document.documentElement.setAttribute("data-theme", theme);
-    const button = document.getElementById("themeToggle");
-    button.textContent = theme === "dark" ? "☀️ Light mode" : "🌙 Dark mode";
-    button.setAttribute("aria-pressed", theme === "dark" ? "true" : "false");
-}
-const savedTheme = localStorage.getItem("pollTheme") || "light";
-applyTheme(savedTheme);
-document.getElementById("themeToggle").addEventListener("click", function() {
-    const nextTheme = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
-    localStorage.setItem("pollTheme", nextTheme);
-    applyTheme(nextTheme);
+document.getElementById("goToLogin").addEventListener("click", function(e) {
+    e.preventDefault();
+    showLoginPage();
 });
 
-if (currentUser) showVotingPage();
+document.getElementById("goToRegister").addEventListener("click", function(e) {
+    e.preventDefault();
+    showRegisterPage();
+});
+
+
+/* ===============================
+   CHECK LOGIN ON PAGE LOAD
+   (not logged in -> register page)
+================================ */
+
+const savedUsers = getUsers();
+
+if (currentUser && savedUsers[currentUser]) {
+    showVotingPage();
+} else {
+    localStorage.removeItem("currentUser");
+    currentUser = null;
+    showRegisterPage();
+}
+
+
+/* ===============================
+   REGISTER
+================================ */
+
+document
+    .getElementById("registerForm")
+    .addEventListener("submit", async function(event) {
+
+        event.preventDefault();
+
+        const username = document.getElementById("regUsername").value.trim();
+        const password = document.getElementById("regPassword").value;
+        const confirm  = document.getElementById("regConfirm").value;
+        const error    = document.getElementById("registerError");
+
+        if (username.length < 3) {
+            error.textContent = "Username must be at least 3 characters.";
+            return;
+        }
+
+        if (password.length < 6) {
+            error.textContent = "Password must be at least 6 characters.";
+            return;
+        }
+
+        if (password !== confirm) {
+            error.textContent = "Passwords do not match.";
+            return;
+        }
+
+        const users = getUsers();
+        const key = username.toLowerCase();
+
+        if (users[key]) {
+            error.textContent = "That username is already taken.";
+            return;
+        }
+
+        users[key] = {
+            username: username,
+            password: await hashPassword(password)
+        };
+
+        saveUsers(users);
+
+        /* Clear form, go to login page */
+        document.getElementById("registerForm").reset();
+
+        showLoginPage("Registration successful! Please login.");
+
+        document.getElementById("username").value = username;
+        document.getElementById("password").focus();
+
+    });
+
+
+/* ===============================
+   LOGIN
+================================ */
+
+document
+    .getElementById("loginForm")
+    .addEventListener("submit", async function(event) {
+
+        event.preventDefault();
+
+        const username = document.getElementById("username").value.trim();
+        const password = document.getElementById("password").value;
+        const loginError = document.getElementById("loginError");
+
+        const users = getUsers();
+        const user = users[username.toLowerCase()];
+
+        if (user && user.password === await hashPassword(password)) {
+
+            currentUser = user.username;
+            localStorage.setItem("currentUser", currentUser);
+
+            loginError.textContent = "";
+            document.getElementById("loginForm").reset();
+
+            showVotingPage();
+
+        } else {
+
+            loginError.textContent = "Invalid username or password!";
+
+        }
+
+    });
+
+
+/* ===============================
+   LOGOUT
+================================ */
+
+function logout() {
+
+    localStorage.removeItem("currentUser");
+    currentUser = null;
+
+    showLoginPage("You have been logged out.");
+
+}
+
+
+/* ===============================
+   GET VOTES
+================================ */
+
+function getVotes() {
+
+    return JSON.parse(
+        localStorage.getItem("votes")
+    ) || {
+
+        "Bajaj Chetak": 0,
+        "TVS iQube": 0,
+        "Ather": 0,
+        "Ola Electric": 0
+
+    };
+
+}
+
+
+/* ===============================
+   SUBMIT VOTE
+================================ */
+
+function submitVote() {
+
+
+    /* Check login */
+
+    if (!currentUser) {
+
+        alert(
+            "Please login before voting."
+        );
+
+        return;
+
+    }
+
+
+    /* Get users who already voted */
+
+    const votedUsers =
+        JSON.parse(
+            localStorage.getItem("votedUsers")
+        ) || [];
+
+
+    /* Prevent duplicate vote */
+
+    if (
+        votedUsers.includes(currentUser)
+    ) {
+
+        alert(
+            "You have already voted!"
+        );
+
+        return;
+
+    }
+
+
+    /* Get selected scooter */
+
+    const selected =
+        document.querySelector(
+            'input[name="candidate"]:checked'
+        );
+
+
+    /* No scooter selected */
+
+    if (!selected) {
+
+        alert(
+            "Please select an EV scooter first."
+        );
+
+        return;
+
+    }
+
+
+    const candidate =
+        selected.value;
+
+
+    /* Get current votes */
+
+    const votes =
+        getVotes();
+
+
+    /* Add vote */
+
+    votes[candidate]++;
+
+
+    /* Save votes */
+
+    localStorage.setItem(
+        "votes",
+        JSON.stringify(votes)
+    );
+
+
+    /* Add user to voted list */
+
+    votedUsers.push(currentUser);
+
+    localStorage.setItem(
+        "votedUsers",
+        JSON.stringify(votedUsers)
+    );
+
+
+    /* Update results */
+
+    updateResults();
+
+
+    /* Show success popup */
+
+    document
+        .getElementById("successPopup")
+        .classList.remove("hidden");
+
+}
+
+
+/* ===============================
+   CLOSE POPUP
+================================ */
+
+function closePopup() {
+
+    document
+        .getElementById("successPopup")
+        .classList.add("hidden");
+
+}
+
+
+/* ===============================
+   UPDATE RESULTS
+================================ */
+
+function updateResults() {
+
+    const votes = getVotes();
+
+
+    /* Calculate total */
+
+    const totalVotes =
+        votes["Bajaj Chetak"] +
+        votes["TVS iQube"] +
+        votes["Ather"] +
+        votes["Ola Electric"];
+
+
+    /* Update vote numbers */
+
+    document.getElementById("chetakVotes")
+        .textContent =
+        votes["Bajaj Chetak"];
+
+
+    document.getElementById("iqubeVotes")
+        .textContent =
+        votes["TVS iQube"];
+
+
+    document.getElementById("atherVotes")
+        .textContent =
+        votes["Ather"];
+
+
+    document.getElementById("olaVotes")
+        .textContent =
+        votes["Ola Electric"];
+
+
+    /* If there are no votes */
+
+    if (totalVotes === 0) {
+
+        document.getElementById("chetakBar")
+            .style.width = "0%";
+
+        document.getElementById("iqubeBar")
+            .style.width = "0%";
+
+        document.getElementById("atherBar")
+            .style.width = "0%";
+
+        document.getElementById("olaBar")
+            .style.width = "0%";
+
+        return;
+
+    }
+
+
+    /* Calculate percentages */
+
+    const chetakPercentage =
+        (votes["Bajaj Chetak"] / totalVotes) * 100;
+
+    const iqubePercentage =
+        (votes["TVS iQube"] / totalVotes) * 100;
+
+    const atherPercentage =
+        (votes["Ather"] / totalVotes) * 100;
+
+    const olaPercentage =
+        (votes["Ola Electric"] / totalVotes) * 100;
+
+
+    /* Update progress bars */
+
+    document.getElementById("chetakBar")
+        .style.width =
+        chetakPercentage + "%";
+
+
+    document.getElementById("iqubeBar")
+        .style.width =
+        iqubePercentage + "%";
+
+
+    document.getElementById("atherBar")
+        .style.width =
+        atherPercentage + "%";
+
+
+    document.getElementById("olaBar")
+        .style.width =
+        olaPercentage + "%";
+
+}
