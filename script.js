@@ -3,6 +3,8 @@
 ================================ */
 
 let currentUser = null;
+let allPolls = [];          /* polls loaded from the server */
+let selectedPollId = null;  /* null = show the poll picker */
 
 const registerPage = document.getElementById("registerPage");
 const loginPage    = document.getElementById("loginPage");
@@ -68,6 +70,7 @@ function showVotingPage() {
     loginPage.classList.add("hidden");
     votingPage.classList.remove("hidden");
     loggedUser.textContent = currentUser;
+    selectedPollId = null;
     renderPolls();
 }
 
@@ -210,8 +213,6 @@ function el(tag, className, text) {
 
 async function renderPolls() {
 
-    const list = document.getElementById("pollList");
-
     const res = await api("polls.php");
 
     /* Session expired / not logged in */
@@ -221,9 +222,9 @@ async function renderPolls() {
         return;
     }
 
-    list.innerHTML = "";
-
     if (!res.ok) {
+        const list = document.getElementById("pollList");
+        list.innerHTML = "";
         const box = el("div", "empty-state");
         box.appendChild(el("h2", "", "Could not load polls"));
         box.appendChild(el("p", "", res.data.error || "Something went wrong."));
@@ -231,17 +232,103 @@ async function renderPolls() {
         return;
     }
 
-    const polls = res.data.polls;
+    allPolls = res.data.polls;
+    drawPolls();
+}
+
+/* Shows either the poll picker or the selected poll */
+function drawPolls() {
+
+    const list = document.getElementById("pollList");
+    list.innerHTML = "";
+
+    const poll = allPolls.find(p => p.id === selectedPollId);
+
+    if (poll) {
+        list.appendChild(buildPollPage(poll));
+    } else {
+        selectedPollId = null;
+        list.appendChild(buildPollPicker(allPolls));
+    }
+}
+
+function openPoll(pollId) {
+    selectedPollId = pollId;
+    drawPolls();
+    window.scrollTo({ top: 0 });
+}
+
+function backToPolls() {
+    selectedPollId = null;
+    drawPolls();
+    window.scrollTo({ top: 0 });
+}
+
+
+/* ---------- POLL PICKER (choose which poll to join) ---------- */
+
+function buildPollPicker(polls) {
+
+    const wrap = el("div", "picker");
 
     if (polls.length === 0) {
         const empty = el("div", "empty-state");
         empty.appendChild(el("h2", "", "No polls yet"));
         empty.appendChild(el("p", "", "Click “Create Poll” to start the first one."));
-        list.appendChild(empty);
-        return;
+        wrap.appendChild(empty);
+        return wrap;
     }
 
-    polls.forEach(poll => list.appendChild(buildPollCard(poll)));
+    const votedCount = polls.filter(p => p.my_vote !== null).length;
+
+    const head = el("div", "poll-title");
+    head.appendChild(el("h2", "", "Choose a poll to participate in"));
+    head.appendChild(el("p", "", "You have voted in " + votedCount + " of " + polls.length +
+        (polls.length === 1 ? " poll." : " polls.")));
+    wrap.appendChild(head);
+
+    const grid = el("div", "poll-grid");
+
+    polls.forEach(poll => {
+
+        const voted = poll.my_vote !== null;
+
+        const card = el("button", "poll-pick-card" + (voted ? " is-voted" : ""));
+        card.type = "button";
+        card.addEventListener("click", () => openPoll(poll.id));
+
+        card.appendChild(el("div", "pick-icon", poll.icon || "🗳️"));
+        card.appendChild(el("h3", "", poll.question));
+
+        const by = poll.created_by ? "by " + poll.created_by : "Default poll";
+        card.appendChild(el("p", "pick-meta",
+            by + " · " + poll.options.length + " options · " +
+            poll.total + (poll.total === 1 ? " vote" : " votes")));
+
+        card.appendChild(el("span", "pick-status " + (voted ? "status-voted" : "status-open"),
+            voted ? "✓ Voted · View results" : "Vote now →"));
+
+        grid.appendChild(card);
+    });
+
+    wrap.appendChild(grid);
+    return wrap;
+}
+
+
+/* ---------- SELECTED POLL (vote + results) ---------- */
+
+function buildPollPage(poll) {
+
+    const page = el("div", "poll-page");
+
+    const back = el("button", "back-btn", "← All polls");
+    back.type = "button";
+    back.addEventListener("click", backToPolls);
+    page.appendChild(back);
+
+    page.appendChild(buildPollCard(poll));
+    return page;
 }
 
 function buildPollCard(poll) {
@@ -508,6 +595,8 @@ async function deletePoll(pollId) {
 
     if (!res.ok) {
         alert(res.data.error || "Could not delete the poll.");
+    } else {
+        selectedPollId = null;
     }
 
     renderPolls();

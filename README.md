@@ -19,6 +19,12 @@ Users register, log in, create polls and vote. Everything is stored in MySQL.
 > Don't open `index.html` by double-clicking it (file://). The PHP code only runs when the
 > page is served by Apache.
 
+## Poll picker
+
+After login you see a grid of all polls. Click one to vote in it (or view results if you already
+voted), then use **← All polls** to go back. The database comes with 3 default polls. If you
+imported an older `database.sql`, run `add_default_polls.sql` once to add the 2 new ones.
+
 ## Database
 
 | Table          | Purpose                                                   |
