@@ -2,7 +2,7 @@
    STATE & ELEMENTS
 ================================ */
 
-let currentUser = localStorage.getItem("currentUser");
+let currentUser = null;
 
 const registerPage = document.getElementById("registerPage");
 const loginPage    = document.getElementById("loginPage");
@@ -11,37 +11,36 @@ const loggedUser   = document.getElementById("loggedUser");
 
 
 /* ===============================
-   USER STORAGE
+   API HELPER  (talks to the PHP backend in /api)
+   - no body  -> GET
+   - with body -> POST (JSON)
 ================================ */
 
-function getUsers() {
+async function api(path, body) {
+
+    const options = { credentials: "same-origin" };
+
+    if (body !== undefined) {
+        options.method  = "POST";
+        options.headers = { "Content-Type": "application/json" };
+        options.body    = JSON.stringify(body);
+    }
+
     try {
-        return JSON.parse(localStorage.getItem("users")) || {};
+        const res = await fetch("api/" + path, options);
+
+        let data;
+        try {
+            data = await res.json();
+        } catch (e) {
+            data = { error: "Unexpected server response. Is the site running through Apache/PHP (http://localhost/...)?" };
+        }
+
+        return { ok: res.ok, status: res.status, data: data };
+
     } catch (e) {
-        return {};
+        return { ok: false, status: 0, data: { error: "Cannot reach the server." } };
     }
-}
-
-function saveUsers(users) {
-    localStorage.setItem("users", JSON.stringify(users));
-}
-
-/* Hash password (SHA-256) so it is not stored as plain text */
-async function hashPassword(password) {
-    if (window.crypto && window.crypto.subtle) {
-        const data = new TextEncoder().encode(password);
-        const buf = await crypto.subtle.digest("SHA-256", data);
-        return Array.from(new Uint8Array(buf))
-            .map(b => b.toString(16).padStart(2, "0"))
-            .join("");
-    }
-    /* Fallback if crypto.subtle is unavailable */
-    let hash = 5381;
-    for (let i = 0; i < password.length; i++) {
-        hash = ((hash << 5) + hash) + password.charCodeAt(i);
-        hash |= 0;
-    }
-    return "fb" + hash;
 }
 
 
@@ -69,7 +68,7 @@ function showVotingPage() {
     loginPage.classList.add("hidden");
     votingPage.classList.remove("hidden");
     loggedUser.textContent = currentUser;
-    updateResults();
+    renderPolls();
 }
 
 document.getElementById("goToLogin").addEventListener("click", function(e) {
@@ -85,18 +84,24 @@ document.getElementById("goToRegister").addEventListener("click", function(e) {
 
 /* ===============================
    CHECK LOGIN ON PAGE LOAD
-   (not logged in -> register page)
+   (valid server session -> polls, otherwise -> register page)
 ================================ */
 
-const savedUsers = getUsers();
+(async function init() {
 
-if (currentUser && savedUsers[currentUser]) {
-    showVotingPage();
-} else {
-    localStorage.removeItem("currentUser");
-    currentUser = null;
-    showRegisterPage();
-}
+    const res = await api("me.php");
+
+    if (res.ok && res.data.user) {
+        currentUser = res.data.user.username;
+        showVotingPage();
+    } else {
+        showRegisterPage();
+        if (!res.ok) {
+            document.getElementById("registerError").textContent = res.data.error || "";
+        }
+    }
+
+})();
 
 
 /* ===============================
@@ -129,20 +134,12 @@ document
             return;
         }
 
-        const users = getUsers();
-        const key = username.toLowerCase();
+        const res = await api("register.php", { username: username, password: password });
 
-        if (users[key]) {
-            error.textContent = "That username is already taken.";
+        if (!res.ok) {
+            error.textContent = res.data.error || "Registration failed.";
             return;
         }
-
-        users[key] = {
-            username: username,
-            password: await hashPassword(password)
-        };
-
-        saveUsers(users);
 
         /* Clear form, go to login page */
         document.getElementById("registerForm").reset();
@@ -165,28 +162,23 @@ document
 
         event.preventDefault();
 
-        const username = document.getElementById("username").value.trim();
-        const password = document.getElementById("password").value;
+        const username   = document.getElementById("username").value.trim();
+        const password   = document.getElementById("password").value;
         const loginError = document.getElementById("loginError");
 
-        const users = getUsers();
-        const user = users[username.toLowerCase()];
+        const res = await api("login.php", { username: username, password: password });
 
-        if (user && user.password === await hashPassword(password)) {
-
-            currentUser = user.username;
-            localStorage.setItem("currentUser", currentUser);
-
-            loginError.textContent = "";
-            document.getElementById("loginForm").reset();
-
-            showVotingPage();
-
-        } else {
-
-            loginError.textContent = "Invalid username or password!";
-
+        if (!res.ok) {
+            loginError.textContent = res.data.error || "Login failed.";
+            return;
         }
+
+        currentUser = res.data.username;
+
+        loginError.textContent = "";
+        document.getElementById("loginForm").reset();
+
+        showVotingPage();
 
     });
 
@@ -195,9 +187,9 @@ document
    LOGOUT
 ================================ */
 
-function logout() {
+async function logout() {
 
-    localStorage.removeItem("currentUser");
+    await api("logout.php", {});
     currentUser = null;
 
     showLoginPage("You have been logged out.");
@@ -206,22 +198,135 @@ function logout() {
 
 
 /* ===============================
-   GET VOTES
+   RENDER POLLS
 ================================ */
 
-function getVotes() {
+function el(tag, className, text) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = text;
+    return node;
+}
 
-    return JSON.parse(
-        localStorage.getItem("votes")
-    ) || {
+async function renderPolls() {
 
-        "Bajaj Chetak": 0,
-        "TVS iQube": 0,
-        "Ather": 0,
-        "Ola Electric": 0
+    const list = document.getElementById("pollList");
 
-    };
+    const res = await api("polls.php");
 
+    /* Session expired / not logged in */
+    if (res.status === 401) {
+        currentUser = null;
+        showLoginPage("Your session expired. Please login again.");
+        return;
+    }
+
+    list.innerHTML = "";
+
+    if (!res.ok) {
+        const box = el("div", "empty-state");
+        box.appendChild(el("h2", "", "Could not load polls"));
+        box.appendChild(el("p", "", res.data.error || "Something went wrong."));
+        list.appendChild(box);
+        return;
+    }
+
+    const polls = res.data.polls;
+
+    if (polls.length === 0) {
+        const empty = el("div", "empty-state");
+        empty.appendChild(el("h2", "", "No polls yet"));
+        empty.appendChild(el("p", "", "Click “Create Poll” to start the first one."));
+        list.appendChild(empty);
+        return;
+    }
+
+    polls.forEach(poll => list.appendChild(buildPollCard(poll)));
+}
+
+function buildPollCard(poll) {
+
+    const myChoice = poll.my_vote;               /* option id or null */
+    const hasVoted = myChoice !== null;
+    const total    = poll.total;
+
+    const card = el("section", "poll-card");
+
+    /* ---- title row ---- */
+    const titleBox = el("div", "poll-title");
+    titleBox.appendChild(el("h2", "", poll.question));
+
+    const meta = poll.created_by ? "Created by " + poll.created_by : "Default poll";
+    titleBox.appendChild(el("p", "", meta + " · " + total + (total === 1 ? " vote" : " votes")));
+
+    if (poll.is_owner) {
+        const del = el("button", "delete-poll-btn", "🗑 Delete");
+        del.type = "button";
+        del.addEventListener("click", () => deletePoll(poll.id));
+        titleBox.appendChild(del);
+    }
+    card.appendChild(titleBox);
+
+    /* ---- options ---- */
+    const grid = el("div", "candidates");
+    const groupName = "poll-" + poll.id;
+
+    poll.options.forEach(opt => {
+        const box = el("div", "candidate" + (myChoice === opt.id ? " chosen" : ""));
+        box.appendChild(el("div", "scooter-icon", poll.icon || "🗳️"));
+        box.appendChild(el("h3", "", opt.text));
+        if (opt.desc) box.appendChild(el("p", "", opt.desc));
+
+        const inputId = groupName + "-" + opt.id;
+        const input = document.createElement("input");
+        input.type = "radio";
+        input.name = groupName;
+        input.value = opt.id;
+        input.id = inputId;
+        input.disabled = hasVoted;
+        input.checked = myChoice === opt.id;
+
+        const label = el("label", "select-btn", myChoice === opt.id ? "✓ Your vote" : "Vote for " + opt.text);
+        label.htmlFor = inputId;
+
+        box.appendChild(input);
+        box.appendChild(label);
+        grid.appendChild(box);
+    });
+    card.appendChild(grid);
+
+    /* ---- submit ---- */
+    if (hasVoted) {
+        card.appendChild(el("p", "voted-note", "You have already voted in this poll."));
+    } else {
+        const btn = el("button", "submit-vote", "🗳️ Submit Vote");
+        btn.type = "button";
+        btn.addEventListener("click", () => submitVote(poll.id, btn));
+        card.appendChild(btn);
+    }
+
+    /* ---- results ---- */
+    const results = el("div", "results");
+    results.appendChild(el("h2", "", "📊 Live Poll Results"));
+
+    poll.options.forEach(opt => {
+        const pct = total === 0 ? 0 : (opt.votes / total) * 100;
+
+        const row = el("div", "result-row");
+        row.appendChild(el("span", "result-name", opt.text));
+
+        const bar = el("div", "bar");
+        const fill = el("div", "bar-fill");
+        fill.style.width = pct + "%";
+        bar.appendChild(fill);
+        row.appendChild(bar);
+
+        row.appendChild(el("span", "vote-number", String(opt.votes)));
+        results.appendChild(row);
+    });
+    card.appendChild(results);
+
+    return card;
 }
 
 
@@ -229,221 +334,181 @@ function getVotes() {
    SUBMIT VOTE
 ================================ */
 
-function submitVote() {
-
-
-    /* Check login */
+async function submitVote(pollId, button) {
 
     if (!currentUser) {
-
-        alert(
-            "Please login before voting."
-        );
-
+        alert("Please login before voting.");
         return;
-
     }
 
-
-    /* Get users who already voted */
-
-    const votedUsers =
-        JSON.parse(
-            localStorage.getItem("votedUsers")
-        ) || [];
-
-
-    /* Prevent duplicate vote */
-
-    if (
-        votedUsers.includes(currentUser)
-    ) {
-
-        alert(
-            "You have already voted!"
-        );
-
-        return;
-
-    }
-
-
-    /* Get selected scooter */
-
-    const selected =
-        document.querySelector(
-            'input[name="candidate"]:checked'
-        );
-
-
-    /* No scooter selected */
+    const selected = document.querySelector('input[name="poll-' + pollId + '"]:checked');
 
     if (!selected) {
-
-        alert(
-            "Please select an EV scooter first."
-        );
-
+        alert("Please select an option first.");
         return;
-
     }
 
+    button.disabled = true;
 
-    const candidate =
-        selected.value;
+    const res = await api("vote.php", {
+        poll_id: pollId,
+        option_id: Number(selected.value)
+    });
 
+    if (res.status === 401) {
+        showLoginPage("Your session expired. Please login again.");
+        return;
+    }
 
-    /* Get current votes */
+    if (!res.ok) {
+        alert(res.data.error || "Could not record your vote.");
+        button.disabled = false;
+        /* e.g. "already voted" -> refresh so the card shows the locked state */
+        if (res.status === 409) renderPolls();
+        return;
+    }
 
-    const votes =
-        getVotes();
-
-
-    /* Add vote */
-
-    votes[candidate]++;
-
-
-    /* Save votes */
-
-    localStorage.setItem(
-        "votes",
-        JSON.stringify(votes)
-    );
-
-
-    /* Add user to voted list */
-
-    votedUsers.push(currentUser);
-
-    localStorage.setItem(
-        "votedUsers",
-        JSON.stringify(votedUsers)
-    );
-
-
-    /* Update results */
-
-    updateResults();
-
-
-    /* Show success popup */
-
-    document
-        .getElementById("successPopup")
-        .classList.remove("hidden");
-
+    await renderPolls();
+    showPopup("Vote Submitted!", "Your vote has been successfully recorded.");
 }
 
 
 /* ===============================
-   CLOSE POPUP
+   POPUP
 ================================ */
+
+function showPopup(title, message) {
+    document.getElementById("popupTitle").textContent = title;
+    document.getElementById("popupMessage").textContent = message;
+    document.getElementById("successPopup").classList.remove("hidden");
+}
 
 function closePopup() {
-
-    document
-        .getElementById("successPopup")
-        .classList.add("hidden");
-
+    document.getElementById("successPopup").classList.add("hidden");
 }
 
 
 /* ===============================
-   UPDATE RESULTS
+   CREATE POLL
 ================================ */
 
-function updateResults() {
+const MIN_OPTIONS = 2;
+const MAX_OPTIONS = 10;
 
-    const votes = getVotes();
+function addOptionInput(value) {
+    const wrap = document.getElementById("optionInputs");
+    if (wrap.children.length >= MAX_OPTIONS) return;
 
+    const row = el("div", "option-input-row");
 
-    /* Calculate total */
+    const input = document.createElement("input");
+    input.type = "text";
+    input.maxLength = 80;
+    input.placeholder = "Option " + (wrap.children.length + 1);
+    input.value = value || "";
 
-    const totalVotes =
-        votes["Bajaj Chetak"] +
-        votes["TVS iQube"] +
-        votes["Ather"] +
-        votes["Ola Electric"];
+    const remove = el("button", "remove-option-btn", "✕");
+    remove.type = "button";
+    remove.title = "Remove option";
+    remove.addEventListener("click", () => {
+        if (wrap.children.length <= MIN_OPTIONS) return;
+        row.remove();
+        refreshOptionControls();
+    });
 
+    row.appendChild(input);
+    row.appendChild(remove);
+    wrap.appendChild(row);
+    refreshOptionControls();
+}
 
-    /* Update vote numbers */
+function refreshOptionControls() {
+    const wrap = document.getElementById("optionInputs");
+    const count = wrap.children.length;
 
-    document.getElementById("chetakVotes")
-        .textContent =
-        votes["Bajaj Chetak"];
+    Array.from(wrap.children).forEach((row, i) => {
+        row.querySelector("input").placeholder = "Option " + (i + 1);
+        row.querySelector("button").style.visibility = count > MIN_OPTIONS ? "visible" : "hidden";
+    });
 
+    document.getElementById("addOptionBtn").classList.toggle("hidden", count >= MAX_OPTIONS);
+}
 
-    document.getElementById("iqubeVotes")
-        .textContent =
-        votes["TVS iQube"];
+function openCreatePoll() {
+    document.getElementById("createPollForm").reset();
+    document.getElementById("createPollError").textContent = "";
+    document.getElementById("optionInputs").innerHTML = "";
+    for (let i = 0; i < MIN_OPTIONS; i++) addOptionInput();
+    document.getElementById("createPollModal").classList.remove("hidden");
+    document.getElementById("pollQuestion").focus();
+}
 
+function closeCreatePoll() {
+    document.getElementById("createPollModal").classList.add("hidden");
+}
 
-    document.getElementById("atherVotes")
-        .textContent =
-        votes["Ather"];
+document.getElementById("createPollForm").addEventListener("submit", async function(event) {
 
+    event.preventDefault();
 
-    document.getElementById("olaVotes")
-        .textContent =
-        votes["Ola Electric"];
+    const error = document.getElementById("createPollError");
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const question = document.getElementById("pollQuestion").value.trim();
 
+    const texts = Array.from(document.querySelectorAll("#optionInputs input"))
+        .map(i => i.value.trim())
+        .filter(t => t.length > 0);
 
-    /* If there are no votes */
-
-    if (totalVotes === 0) {
-
-        document.getElementById("chetakBar")
-            .style.width = "0%";
-
-        document.getElementById("iqubeBar")
-            .style.width = "0%";
-
-        document.getElementById("atherBar")
-            .style.width = "0%";
-
-        document.getElementById("olaBar")
-            .style.width = "0%";
-
+    if (question.length < 3) {
+        error.textContent = "Please enter a question (at least 3 characters).";
         return;
-
     }
 
+    if (texts.length < MIN_OPTIONS) {
+        error.textContent = "Please provide at least " + MIN_OPTIONS + " options.";
+        return;
+    }
 
-    /* Calculate percentages */
+    const lowered = texts.map(t => t.toLowerCase());
+    if (new Set(lowered).size !== lowered.length) {
+        error.textContent = "Options must be different from each other.";
+        return;
+    }
 
-    const chetakPercentage =
-        (votes["Bajaj Chetak"] / totalVotes) * 100;
+    submitBtn.disabled = true;
+    const res = await api("create_poll.php", { question: question, options: texts });
+    submitBtn.disabled = false;
 
-    const iqubePercentage =
-        (votes["TVS iQube"] / totalVotes) * 100;
+    if (res.status === 401) {
+        closeCreatePoll();
+        showLoginPage("Your session expired. Please login again.");
+        return;
+    }
 
-    const atherPercentage =
-        (votes["Ather"] / totalVotes) * 100;
+    if (!res.ok) {
+        error.textContent = res.data.error || "Could not create the poll.";
+        return;
+    }
 
-    const olaPercentage =
-        (votes["Ola Electric"] / totalVotes) * 100;
-
-
-    /* Update progress bars */
-
-    document.getElementById("chetakBar")
-        .style.width =
-        chetakPercentage + "%";
-
-
-    document.getElementById("iqubeBar")
-        .style.width =
-        iqubePercentage + "%";
-
-
-    document.getElementById("atherBar")
-        .style.width =
-        atherPercentage + "%";
+    closeCreatePoll();
+    await renderPolls();
+    showPopup("Poll Created!", "Your poll is now live. Share it with others!");
+});
 
 
-    document.getElementById("olaBar")
-        .style.width =
-        olaPercentage + "%";
+/* ===============================
+   DELETE POLL (creator only)
+================================ */
 
+async function deletePoll(pollId) {
+
+    if (!confirm("Delete this poll and all its votes?")) return;
+
+    const res = await api("delete_poll.php", { poll_id: pollId });
+
+    if (!res.ok) {
+        alert(res.data.error || "Could not delete the poll.");
+    }
+
+    renderPolls();
 }

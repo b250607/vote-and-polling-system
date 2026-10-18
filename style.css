@@ -472,3 +472,204 @@ body {
 .switch-text a:hover {
     text-decoration: underline;
 }
+
+
+/* =========================
+   MULTI-POLL / CREATE POLL
+========================= */
+
+.toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.create-poll-btn {
+    border: none;
+    background: #4f46e5;
+    color: white;
+    padding: 11px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.create-poll-btn:hover {
+    background: #4338ca;
+}
+
+.poll-card {
+    margin-bottom: 45px;
+}
+
+.poll-title {
+    position: relative;
+}
+
+.delete-poll-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    border: none;
+    background: #fee2e2;
+    color: #dc2626;
+    padding: 7px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 13px;
+}
+
+.delete-poll-btn:hover {
+    background: #fecaca;
+}
+
+.poll-card .candidates {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.candidate.chosen {
+    outline: 3px solid #16a34a;
+}
+
+.candidate input:disabled + .select-btn {
+    cursor: default;
+}
+
+.candidate input:disabled:not(:checked) + .select-btn {
+    opacity: 0.55;
+}
+
+.candidate input:disabled:checked + .select-btn {
+    background: #16a34a;
+    border-color: #16a34a;
+    color: white;
+}
+
+.voted-note {
+    text-align: center;
+    color: white;
+    font-weight: bold;
+    margin: 28px 0;
+}
+
+.results {
+    margin-top: 0;
+}
+
+.empty-state {
+    background: white;
+    padding: 45px 25px;
+    border-radius: 15px;
+    text-align: center;
+    color: #666;
+}
+
+.empty-state h2 {
+    color: #333;
+    margin-bottom: 8px;
+}
+
+/* ---- create poll modal ---- */
+
+.create-popup {
+    width: 480px;
+    max-height: 90vh;
+    overflow-y: auto;
+    text-align: left;
+}
+
+.create-popup .create-title {
+    color: #4f46e5;
+    text-align: center;
+    margin-bottom: 22px;
+}
+
+.hint {
+    font-weight: normal;
+    color: #888;
+    font-size: 13px;
+}
+
+.option-input-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.option-input-row input {
+    flex: 1;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 15px;
+}
+
+.option-input-row input:focus {
+    outline: none;
+    border-color: #4f46e5;
+}
+
+.remove-option-btn {
+    width: 42px;
+    border: none;
+    background: #f3f4f6;
+    color: #666;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 15px;
+}
+
+.remove-option-btn:hover {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.add-option-btn {
+    background: none;
+    border: 2px dashed #c7c7f0;
+    color: #4f46e5;
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.add-option-btn:hover {
+    background: #f5f5ff;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.modal-actions .popup-btn {
+    margin-top: 0;
+}
+
+.cancel-btn {
+    padding: 11px 22px;
+    background: #e5e7eb;
+    color: #333;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.cancel-btn:hover {
+    background: #d1d5db;
+}
+
+@media (max-width: 600px) {
+    .delete-poll-btn {
+        position: static;
+        margin-top: 12px;
+    }
+}
